@@ -1,17 +1,1523 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Puzzle Lab</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230f172a'/%3E%3Cg fill='none' stroke='%2360a5fa' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M28 18c-5 0-9 4-9 9 0 3 2 6 4 8-2 2-3 5-3 8 0 6 5 11 11 11h4'/%3E%3Cpath d='M36 18c5 0 9 4 9 9 0 3-2 6-4 8 2 2 3 5 3 8 0 6-5 11-11 11h-4'/%3E%3Cpath d='M24 27c2 1 4 2 8 2s6-1 8-2'/%3E%3Cpath d='M24 40c2 1 4 2 8 2s6-1 8-2'/%3E%3C/g%3E%3Ccircle cx='27' cy='28' r='1.8' fill='%23fbbf24'/%3E%3Ccircle cx='37' cy='28' r='1.8' fill='%23f97316'/%3E%3C/svg%3E" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-slate-900 text-gray-200 font-sans antialiased selection:bg-indigo-500/30">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Puzzle Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: rgba(255,255,255,0.08);
+    --indigo: #6366f1;
+    --indigo-light: #818cf8;
+    --indigo-dark: #4f46e5;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --green: #10b981;
+    --red: #f43f5e;
+    --amber: #f59e0b;
+    --blue: #3b82f6;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  h1,h2,h3,h4 { font-family: 'Syne', sans-serif; }
 
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #2d3a52; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3d4f6e; }
+
+  /* Background blobs */
+  #bg-blobs {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .blob {
+    position: absolute; border-radius: 50%;
+    filter: blur(100px); opacity: 0.07;
+  }
+  .blob-1 { width: 40vw; height: 40vw; background: var(--indigo); top: -10%; left: -10%; }
+  .blob-2 { width: 40vw; height: 40vw; background: #4f46e5; bottom: -10%; right: -10%; }
+
+  /* Navbar */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10,14,26,0.8);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+  }
+  .nav-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 0.75rem;
+    cursor: pointer; text-decoration: none;
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 1.2rem; color: var(--text);
+    transition: color 0.2s;
+  }
+  .nav-logo:hover { color: var(--indigo-light); }
+  .nav-logo-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: rgba(99,102,241,0.15);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .nav-logo:hover .nav-logo-icon { background: rgba(99,102,241,0.25); }
+  .nav-links { display: flex; gap: 1.5rem; }
+  .nav-link {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: var(--text-dim); font-size: 0.9rem;
+    background: none; border: none; cursor: pointer;
+    transition: color 0.2s;
+  }
+  .nav-link:hover { color: var(--text); }
+  @media (max-width: 640px) { .nav-links { display: none; } }
+
+  /* Main */
+  main { position: relative; z-index: 1; min-height: calc(100vh - 65px - 57px); display: flex; flex-direction: column; }
+
+  /* Pages */
+  .page { display: none; flex: 1; flex-direction: column; animation: fadeUp 0.3s ease; }
+  .page.active { display: flex; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Landing */
+  .landing {
+    align-items: center; justify-content: center;
+    padding: 3rem 1.5rem;
+  }
+  .landing-inner { max-width: 1280px; width: 100%; }
+  .hero { text-align: center; margin-bottom: 5rem; }
+  .hero-badge {
+    display: inline-block; margin-bottom: 1.25rem;
+    padding: 0.35rem 1rem; border-radius: 999px;
+    background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25);
+    color: var(--indigo-light); font-size: 0.78rem; font-weight: 500; letter-spacing: 0.08em;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    font-weight: 800; line-height: 1.05;
+    background: linear-gradient(135deg, #fff 0%, #c7d2fe 50%, var(--indigo-light) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 1.25rem;
+  }
+  .hero p {
+    font-size: 1.15rem; color: var(--text-muted);
+    max-width: 600px; margin: 0 auto 2.5rem; line-height: 1.7;
+  }
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+  .game-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 1.25rem; padding: 1.75rem;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    display: flex; flex-direction: column;
+  }
+  .game-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(99,102,241,0) 0%, rgba(99,102,241,0) 100%);
+    transition: background 0.4s ease; border-radius: inherit;
+  }
+  .game-card:hover::before {
+    background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(139,92,246,0.07) 100%);
+  }
+  .game-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    border-color: rgba(99,102,241,0.3);
+  }
+  .card-icon {
+    width: 52px; height: 52px; border-radius: 12px;
+    background: rgba(99,102,241,0.1);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1.25rem; color: var(--indigo-light);
+    transition: background 0.3s, color 0.3s;
+  }
+  .game-card:hover .card-icon { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+  .game-card h3 {
+    font-size: 1.35rem; font-weight: 700; color: white; margin-bottom: 0.6rem;
+    transition: color 0.2s;
+  }
+  .game-card:hover h3 { color: #c7d2fe; }
+  .game-card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.65; flex: 1; margin-bottom: 1.5rem; }
+  .btn-play {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.75rem 1.25rem; background: var(--indigo);
+    color: white; border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.95rem;
+    cursor: pointer; transition: all 0.25s;
+    box-shadow: 0 0 15px rgba(99,102,241,0.3);
+    width: 100%;
+  }
+  .btn-play:hover {
+    background: var(--indigo-light);
+    box-shadow: 0 0 25px rgba(129,140,248,0.5);
+    transform: scale(1.02);
+  }
+  .btn-play:active { transform: scale(0.97); }
+
+  /* Buttons general */
+  .btn-primary {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.75rem 1.5rem; background: var(--indigo);
+    color: white; border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.95rem;
+    cursor: pointer; transition: all 0.25s; width: 100%;
+    box-shadow: 0 0 15px rgba(99,102,241,0.3);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--indigo-light); box-shadow: 0 0 25px rgba(129,140,248,0.5);
+  }
+  .btn-primary:active:not(:disabled) { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-secondary {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.75rem 1.5rem; background: #1f2937;
+    color: white; border: 1px solid var(--border); border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.95rem;
+    cursor: pointer; transition: all 0.25s; width: 100%;
+  }
+  .btn-secondary:hover:not(:disabled) { background: #2d3748; }
+  .btn-secondary:active:not(:disabled) { transform: scale(0.97); }
+  .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-ghost {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: none; border: none; color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+    cursor: pointer; transition: color 0.2s; padding: 0;
+  }
+  .btn-ghost:hover { color: white; }
+
+  /* Glass panel */
+  .glass {
+    background: rgba(17,24,39,0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+  }
+
+  /* Game layouts */
+  .game-view {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; padding: 2rem 1.5rem;
+  }
+  .game-inner { max-width: 960px; width: 100%; }
+  .back-btn { margin-bottom: 2rem; }
+  .game-layout {
+    display: grid; grid-template-columns: 1fr; gap: 2rem;
+  }
+  @media (min-width: 1024px) {
+    .game-layout { grid-template-columns: 2fr 1fr; }
+  }
+  .game-board-wrap {
+    display: flex; justify-content: center; align-items: flex-start;
+  }
+  .game-panel { padding: 1.5rem; }
+  .game-title { font-size: 1.75rem; font-weight: 700; color: white; margin-bottom: 0.5rem; }
+  .game-desc { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0; }
+  .controls-group { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+  .panel-title { font-size: 1rem; font-weight: 600; color: white; margin-bottom: 1rem; }
+  .how-to-title {
+    font-size: 0.75rem; font-weight: 600; color: var(--indigo-light);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;
+  }
+  .how-to-list { list-style: disc; padding-left: 1.1rem; }
+  .how-to-list li { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; line-height: 1.5; }
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 1rem; margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-label { color: var(--text-muted); font-size: 0.9rem; }
+  .stat-val { font-size: 1.5rem; font-weight: 700; color: white; font-family: 'Syne', sans-serif; }
+
+  /* Win overlay */
+  .win-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(10,14,26,0.85); backdrop-filter: blur(8px);
+    border-radius: inherit; flex-direction: column; gap: 0.5rem;
+  }
+  .win-overlay.show { display: flex; }
+  .win-title { font-size: 2rem; font-weight: 800; color: var(--indigo-light); }
+  .win-sub { color: var(--text-dim); margin-bottom: 0.5rem; }
+
+  /* ===== SUDOKU ===== */
+  #sudoku-board-container { padding: 1.25rem; position: relative; }
+  .sudoku-grid {
+    display: grid; grid-template-columns: repeat(9, 1fr);
+    gap: 2px; background: rgba(99,102,241,0.2);
+    border: 2px solid rgba(99,102,241,0.3);
+    border-radius: 10px; overflow: hidden;
+  }
+  .sudoku-cell {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(0.9rem, 2vw, 1.25rem); font-weight: 600;
+    font-family: 'Syne', sans-serif; cursor: pointer;
+    background: var(--surface); transition: background 0.15s;
+    min-width: 0;
+  }
+  .sudoku-cell.initial { color: var(--text-dim); cursor: not-allowed; background: #0f172a; }
+  .sudoku-cell.editable { color: var(--indigo-light); }
+  .sudoku-cell.editable:hover { background: #1a2236; }
+  .sudoku-cell.selected { background: rgba(99,102,241,0.2) !important; outline: 2px solid var(--indigo); outline-offset: -2px; }
+  .sudoku-cell.thick-right { border-right: 2px solid rgba(99,102,241,0.4); }
+  .sudoku-cell.thick-bottom { border-bottom: 2px solid rgba(99,102,241,0.4); }
+
+  /* ===== SLIDING PUZZLE ===== */
+  #sliding-board {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 6px; background: #0f172a; padding: 10px;
+    border-radius: 14px;
+    width: min(90vw, 380px); height: min(90vw, 380px);
+  }
+  .slide-tile {
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(1.1rem, 4vw, 1.6rem); font-weight: 700;
+    font-family: 'Syne', sans-serif; border-radius: 9px;
+    transition: transform 0.15s ease;
+    user-select: none;
+  }
+  .slide-tile.filled {
+    background: var(--indigo); color: white; cursor: pointer;
+    border: 1px solid rgba(129,140,248,0.3);
+    box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+  }
+  .slide-tile.filled:hover { background: var(--indigo-light); }
+  .slide-tile.empty { background: transparent; }
+
+  /* ===== MAZE ===== */
+  #maze-canvas-wrap { position: relative; }
+  #maze-canvas {
+    display: block; border-radius: 10px; background: #0a0e1a;
+    max-width: 100%; height: auto;
+  }
+  .maze-legend {
+    display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.8rem; color: var(--text-muted);
+  }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+  }
+  .maze-dpad {
+    display: grid; grid-template-columns: repeat(3, 40px);
+    grid-template-rows: repeat(3, 40px); gap: 4px; margin-top: 1rem;
+  }
+  .dpad-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-dim); transition: all 0.15s;
+    font-size: 1rem;
+  }
+  .dpad-btn:hover { background: #2d3a52; color: white; }
+  .dpad-btn:active { transform: scale(0.92); }
+  .dpad-center { background: none; border: none; cursor: default; }
+
+  /* ===== COLOR SORT ===== */
+  #color-board {
+    display: flex; flex-wrap: wrap;
+    gap: 1.25rem; justify-content: center; padding: 1.5rem;
+  }
+  .tube-wrapper {
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  }
+  .tube {
+    width: 52px; height: 200px;
+    border: 3px solid rgba(255,255,255,0.15); border-top: none;
+    border-radius: 0 0 26px 26px;
+    background: rgba(17,24,39,0.5);
+    display: flex; flex-direction: column-reverse;
+    overflow: hidden; cursor: pointer;
+    transition: transform 0.25s ease, border-color 0.2s, box-shadow 0.2s;
+    padding: 3px;
+    position: relative;
+  }
+  .tube::before {
+    content: ''; position: absolute; top: 0; left: -3px; right: -3px;
+    height: 4px; background: rgba(255,255,255,0.15); border-radius: 0;
+  }
+  .tube.selected {
+    border-color: var(--indigo-light);
+    transform: translateY(-12px);
+    box-shadow: 0 8px 20px rgba(99,102,241,0.35);
+  }
+  .tube:hover:not(.selected) { border-color: rgba(255,255,255,0.3); }
+  .color-ball {
+    width: 100%; height: 25%; border-radius: 50%;
+    flex-shrink: 0; transition: all 0.2s ease;
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2);
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid rgba(255,255,255,0.04);
+    padding: 1.5rem; text-align: center;
+    color: var(--text-muted); font-size: 0.85rem;
+    background: rgba(10,14,26,0.5); backdrop-filter: blur(4px);
+    position: relative; z-index: 1;
+  }
+
+  /* SVG icons inline */
+  .icon { display: inline-flex; align-items: center; justify-content: center; }
+
+  /* Number input pad for mobile */
+  .num-pad {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 0.5rem;
+  }
+  .num-btn {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 1rem;
+    color: var(--text); cursor: pointer; transition: all 0.15s;
+  }
+  .num-btn:hover { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); color: var(--indigo-light); }
+  .num-btn.del { font-size: 0.75rem; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div id="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+</div>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" onclick="showPage('landing')">
+      <div class="nav-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#818cf8">
+          <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+          <path d="M12 6v6l4 2"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      AI Puzzle Lab
+    </a>
+    <div class="nav-links">
+      <button class="nav-link" onclick="showPage('landing')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+      </button>
+      <button class="nav-link" onclick="document.getElementById('games-grid')?.scrollIntoView({behavior:'smooth'});showPage('landing')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Games
+      </button>
+      <button class="nav-link">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        About
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <!-- LANDING PAGE -->
+  <div id="page-landing" class="page landing active">
+    <div class="landing-inner">
+      <div class="hero">
+        <div class="hero-badge">POWERED BY ALGORITHMS</div>
+        <h1>Play AI Powered<br>Puzzle Games</h1>
+        <p>Challenge yourself with classic puzzles, or sit back and watch intelligent algorithms solve them before your eyes.</p>
+        <button class="btn-primary" style="width:auto;margin:0 auto;padding:1rem 2rem;font-size:1rem" onclick="document.getElementById('games-grid').scrollIntoView({behavior:'smooth'})">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Start Playing
+        </button>
+      </div>
+      <div class="games-grid" id="games-grid">
+        <div class="game-card" onclick="showPage('sudoku')">
+          <div class="card-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <h3>Sudoku Solver</h3>
+          <p>Solve Sudoku puzzles or watch AI solve them instantly using backtracking algorithms.</p>
+          <button class="btn-play">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Play Game
+          </button>
+        </div>
+        <div class="game-card" onclick="showPage('sliding')">
+          <div class="card-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+          </div>
+          <h3>Sliding Puzzle</h3>
+          <p>Rearrange the tiles to complete the 15-puzzle. AI can solve it optimally using a heuristic search.</p>
+          <button class="btn-play">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Play Game
+          </button>
+        </div>
+        <div class="game-card" onclick="showPage('maze')">
+          <div class="card-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h4v4H3zM17 3h4v4h-4zM3 17h4v4H3z"/><path d="M7 5h6M17 5v6M13 5v6M13 11h4M7 7v6M7 13h6M13 17v4M7 19h6"/></svg>
+          </div>
+          <h3>Maze Generator</h3>
+          <p>A new maze is generated every time. Try solving it or let AI find the shortest path using BFS.</p>
+          <button class="btn-play">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Play Game
+          </button>
+        </div>
+        <div class="game-card" onclick="showPage('color')">
+          <div class="card-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+          </div>
+          <h3>Color Sorting</h3>
+          <p>Sort colors into tubes. Use logic to complete the puzzle or watch the AI solve it step by step.</p>
+          <button class="btn-play">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Play Game
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUDOKU PAGE -->
+  <div id="page-sudoku" class="page">
+    <div class="game-view">
+      <div class="game-inner">
+        <button class="btn-ghost back-btn" onclick="showPage('landing')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back to Games
+        </button>
+        <div class="game-layout">
+          <div class="game-board-wrap">
+            <div class="glass" id="sudoku-board-container">
+              <div class="win-overlay" id="sudoku-win">
+                <div class="win-title">Solved! 🎉</div>
+                <button class="btn-primary" style="width:auto;margin-top:0.75rem" onclick="sudokuGenerateNew()">Play Again</button>
+              </div>
+              <div class="sudoku-grid" id="sudoku-grid"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div>
+              <div class="game-title">Sudoku Solver</div>
+              <div class="game-desc">Fill the 9×9 grid so that each row, column, and 3×3 box contains digits 1–9.</div>
+            </div>
+            <div class="glass game-panel">
+              <div class="panel-title">Controls</div>
+              <div class="controls-group">
+                <button class="btn-primary" id="sudoku-ai-btn" onclick="sudokuSolveAI()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg>
+                  Solve with AI
+                </button>
+                <button class="btn-secondary" id="sudoku-reset-btn" onclick="sudokuReset()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  Reset Board
+                </button>
+                <button class="btn-secondary" id="sudoku-new-btn" onclick="sudokuGenerateNew()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Generate New
+                </button>
+              </div>
+              <div class="num-pad" id="sudoku-numpad"></div>
+            </div>
+            <div class="glass game-panel">
+              <div class="how-to-title">How to play</div>
+              <ul class="how-to-list">
+                <li>Click an empty cell to select it.</li>
+                <li>Type a number (1–9) or use the pad below.</li>
+                <li>Use Backspace or 0 to clear a cell.</li>
+                <li>Use arrow keys to navigate.</li>
+                <li>Click "Solve with AI" to watch backtracking in action.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDING PUZZLE PAGE -->
+  <div id="page-sliding" class="page">
+    <div class="game-view">
+      <div class="game-inner">
+        <button class="btn-ghost back-btn" onclick="showPage('landing')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back to Games
+        </button>
+        <div class="game-layout">
+          <div class="game-board-wrap">
+            <div class="glass" style="padding:1.25rem;position:relative">
+              <div class="win-overlay" id="sliding-win">
+                <div class="win-title">Solved! 🎉</div>
+                <div class="win-sub" id="sliding-win-moves"></div>
+                <button class="btn-primary" style="width:auto;margin-top:0.75rem" onclick="slidingShuffle()">Play Again</button>
+              </div>
+              <div id="sliding-board"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div>
+              <div class="game-title">15 Puzzle</div>
+              <div class="game-desc">Slide the tiles to arrange them in order from 1 to 15, leaving the bottom-right empty.</div>
+            </div>
+            <div class="glass game-panel">
+              <div class="stat-row">
+                <span class="stat-label">Moves</span>
+                <span class="stat-val" id="sliding-moves">0</span>
+              </div>
+              <div class="panel-title">Controls</div>
+              <div class="controls-group">
+                <button class="btn-primary" id="sliding-ai-btn" onclick="slidingSolveAI()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg>
+                  Solve with AI
+                </button>
+                <button class="btn-secondary" id="sliding-shuffle-btn" onclick="slidingShuffle()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l5.1 5.1M4 4l5 5"/></svg>
+                  Shuffle Puzzle
+                </button>
+              </div>
+            </div>
+            <div class="glass game-panel">
+              <div class="how-to-title">How to play</div>
+              <ul class="how-to-list">
+                <li>Click a tile adjacent to the empty space to slide it.</li>
+                <li>Arrange numbers 1–15 in order.</li>
+                <li>Use arrow keys to move tiles.</li>
+                <li>Click "Solve with AI" to watch the heuristic solver.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAZE PAGE -->
+  <div id="page-maze" class="page">
+    <div class="game-view">
+      <div class="game-inner">
+        <button class="btn-ghost back-btn" onclick="showPage('landing')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back to Games
+        </button>
+        <div class="game-layout">
+          <div class="game-board-wrap">
+            <div class="glass" style="padding:1.25rem;position:relative" id="maze-board-container">
+              <div class="win-overlay" id="maze-win">
+                <div class="win-title">Goal Reached! 🏆</div>
+                <button class="btn-primary" style="width:auto;margin-top:0.75rem" onclick="mazeGenerate()">Play Again</button>
+              </div>
+              <canvas id="maze-canvas" width="400" height="400"></canvas>
+              <div class="maze-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div> You</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div> Goal</div>
+                <div class="legend-item"><div style="width:16px;height:3px;background:#818cf8;border-radius:2px"></div> AI path</div>
+              </div>
+              <div class="maze-dpad" id="maze-dpad">
+                <div></div>
+                <button class="dpad-btn" onclick="mazeMovePlayer('up')">▲</button>
+                <div></div>
+                <button class="dpad-btn" onclick="mazeMovePlayer('left')">◀</button>
+                <div class="dpad-center"></div>
+                <button class="dpad-btn" onclick="mazeMovePlayer('right')">▶</button>
+                <div></div>
+                <button class="dpad-btn" onclick="mazeMovePlayer('down')">▼</button>
+                <div></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div>
+              <div class="game-title">Maze Generator</div>
+              <div class="game-desc">Navigate from the top-left corner to the green goal at the bottom-right.</div>
+            </div>
+            <div class="glass game-panel">
+              <div class="panel-title">Controls</div>
+              <div class="controls-group">
+                <button class="btn-primary" id="maze-ai-btn" onclick="mazeSolveAI()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg>
+                  Solve with AI
+                </button>
+                <button class="btn-secondary" id="maze-new-btn" onclick="mazeGenerate()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  Generate New Maze
+                </button>
+              </div>
+            </div>
+            <div class="glass game-panel">
+              <div class="how-to-title">How to play</div>
+              <ul class="how-to-list">
+                <li>Use arrow keys or the D-pad to move the red dot.</li>
+                <li>Reach the green square to win.</li>
+                <li>Click "Solve with AI" to see the shortest path using BFS.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLOR SORT PAGE -->
+  <div id="page-color" class="page">
+    <div class="game-view">
+      <div class="game-inner">
+        <button class="btn-ghost back-btn" onclick="showPage('landing')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back to Games
+        </button>
+        <div class="game-layout">
+          <div class="game-board-wrap">
+            <div class="glass" style="position:relative;width:100%">
+              <div class="win-overlay" id="color-win">
+                <div class="win-title">Puzzle Solved! 🎉</div>
+                <div class="win-sub" id="color-win-moves"></div>
+                <button class="btn-primary" style="width:auto;margin-top:0.75rem" onclick="colorGenerateLevel()">Play Again</button>
+              </div>
+              <div id="color-board"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div>
+              <div class="game-title">Color Sorting</div>
+              <div class="game-desc">Sort the colors so that each tube contains only one color.</div>
+            </div>
+            <div class="glass game-panel">
+              <div class="stat-row">
+                <span class="stat-label">Moves</span>
+                <span class="stat-val" id="color-moves">0</span>
+              </div>
+              <div class="panel-title">Controls</div>
+              <div class="controls-group">
+                <button class="btn-primary" id="color-ai-btn" onclick="colorSolveAI()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg>
+                  Solve with AI
+                </button>
+                <button class="btn-secondary" id="color-new-btn" onclick="colorGenerateLevel()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  New Puzzle
+                </button>
+              </div>
+            </div>
+            <div class="glass game-panel">
+              <div class="how-to-title">How to play</div>
+              <ul class="how-to-list">
+                <li>Click a tube to select the top color.</li>
+                <li>Click another tube to move the color there.</li>
+                <li>You can only move onto the same color or into an empty tube.</li>
+                <li>Tubes hold a maximum of 4 colors.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>AI Puzzle Lab &ndash; Built with intelligent algorithms and modern web design.</p>
+</footer>
+
+<script>
+// ==================== PAGE ROUTING ====================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-' + name);
+  if (page) {
+    page.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+  if (name === 'sudoku') sudokuInit();
+  if (name === 'sliding') slidingInit();
+  if (name === 'maze') mazeGenerate();
+  if (name === 'color') colorGenerateLevel();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ==================== SUDOKU ====================
+const SUDOKU_PUZZLE = [
+  [5,3,0,0,7,0,0,0,0],
+  [6,0,0,1,9,5,0,0,0],
+  [0,9,8,0,0,0,0,6,0],
+  [8,0,0,0,6,0,0,0,3],
+  [4,0,0,8,0,3,0,0,1],
+  [7,0,0,0,2,0,0,0,6],
+  [0,6,0,0,0,0,2,8,0],
+  [0,0,0,4,1,9,0,0,5],
+  [0,0,0,0,8,0,0,7,9]
+];
+
+let sudokuBoard = [], sudokuInitial = [], sudokuSelected = null, sudokuSolving = false;
+
+function sudokuInit() {
+  sudokuInitial = SUDOKU_PUZZLE.map(r => [...r]);
+  sudokuBoard = SUDOKU_PUZZLE.map(r => [...r]);
+  sudokuSelected = null;
+  sudokuSolving = false;
+  document.getElementById('sudoku-win').classList.remove('show');
+  sudokuRenderGrid();
+  sudokuBuildNumPad();
+}
+
+function sudokuBuildNumPad() {
+  const pad = document.getElementById('sudoku-numpad');
+  pad.innerHTML = '';
+  for (let i = 1; i <= 9; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'num-btn';
+    btn.textContent = i;
+    btn.onclick = () => sudokuInputNum(i);
+    pad.appendChild(btn);
+  }
+  const del = document.createElement('button');
+  del.className = 'num-btn del'; del.textContent = '⌫';
+  del.onclick = () => sudokuInputNum(0);
+  pad.appendChild(del);
+}
+
+function sudokuRenderGrid() {
+  const grid = document.getElementById('sudoku-grid');
+  grid.innerHTML = '';
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'sudoku-cell';
+      const isInit = sudokuInitial[r][c] !== 0;
+      cell.classList.add(isInit ? 'initial' : 'editable');
+      if (c === 2 || c === 5) cell.classList.add('thick-right');
+      if (r === 2 || r === 5) cell.classList.add('thick-bottom');
+      if (sudokuSelected && sudokuSelected[0] === r && sudokuSelected[1] === c) cell.classList.add('selected');
+      cell.textContent = sudokuBoard[r][c] || '';
+      cell.dataset.r = r; cell.dataset.c = c;
+      cell.onclick = () => {
+        if (sudokuSolving || sudokuInitial[r][c] !== 0) return;
+        sudokuSelected = [r, c];
+        sudokuRenderGrid();
+      };
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function sudokuIsValid(b, r, c, num) {
+  for (let i = 0; i < 9; i++) {
+    if (b[r][i] === num && i !== c) return false;
+    if (b[i][c] === num && i !== r) return false;
+  }
+  const sr = Math.floor(r/3)*3, sc = Math.floor(c/3)*3;
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++)
+      if (b[sr+i][sc+j] === num && (sr+i !== r || sc+j !== c)) return false;
+  return true;
+}
+
+function sudokuInputNum(num) {
+  if (!sudokuSelected || sudokuSolving) return;
+  const [r, c] = sudokuSelected;
+  if (sudokuInitial[r][c] !== 0) return;
+  if (num === 0) {
+    sudokuBoard[r][c] = 0;
+  } else if (sudokuIsValid(sudokuBoard, r, c, num)) {
+    sudokuBoard[r][c] = num;
+  }
+  sudokuRenderGrid();
+  if (sudokuBoard.every(row => row.every(v => v !== 0))) {
+    document.getElementById('sudoku-win').classList.add('show');
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('page-sudoku').classList.contains('active')) return;
+  if (!sudokuSelected || sudokuSolving) return;
+  const [r, c] = sudokuSelected;
+  if (e.key >= '1' && e.key <= '9') { sudokuInputNum(parseInt(e.key)); }
+  else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { sudokuInputNum(0); }
+  else if (e.key === 'ArrowUp' && r > 0) { sudokuSelected = [r-1,c]; sudokuRenderGrid(); }
+  else if (e.key === 'ArrowDown' && r < 8) { sudokuSelected = [r+1,c]; sudokuRenderGrid(); }
+  else if (e.key === 'ArrowLeft' && c > 0) { sudokuSelected = [r,c-1]; sudokuRenderGrid(); }
+  else if (e.key === 'ArrowRight' && c < 8) { sudokuSelected = [r,c+1]; sudokuRenderGrid(); }
+});
+
+async function sudokuSolveAI() {
+  if (sudokuSolving) return;
+  sudokuSolving = true;
+  sudokuSelected = null;
+  document.getElementById('sudoku-win').classList.remove('show');
+  document.getElementById('sudoku-ai-btn').textContent = 'AI is Solving...';
+  document.getElementById('sudoku-ai-btn').disabled = true;
+  document.getElementById('sudoku-reset-btn').disabled = true;
+  document.getElementById('sudoku-new-btn').disabled = true;
+
+  const b = sudokuInitial.map(r => [...r]);
+  sudokuBoard = b;
+
+  async function solve(board) {
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (board[r][c] === 0) {
+          for (let n = 1; n <= 9; n++) {
+            if (sudokuIsValid(board, r, c, n)) {
+              board[r][c] = n;
+              sudokuBoard = board.map(row => [...row]);
+              sudokuRenderGrid();
+              await sleep(12);
+              if (await solve(board)) return true;
+              board[r][c] = 0;
+              sudokuBoard = board.map(row => [...row]);
+              sudokuRenderGrid();
+              await sleep(8);
+            }
+          }
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  await solve(b);
+  sudokuSolving = false;
+  const btn = document.getElementById('sudoku-ai-btn');
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg> Solve with AI';
+  btn.disabled = false;
+  document.getElementById('sudoku-reset-btn').disabled = false;
+  document.getElementById('sudoku-new-btn').disabled = false;
+  document.getElementById('sudoku-win').classList.add('show');
+  confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+}
+
+function sudokuReset() {
+  if (sudokuSolving) return;
+  sudokuBoard = sudokuInitial.map(r => [...r]);
+  sudokuSelected = null;
+  document.getElementById('sudoku-win').classList.remove('show');
+  sudokuRenderGrid();
+}
+
+function sudokuGenerateNew() {
+  if (sudokuSolving) return;
+  const empty = Array(9).fill(null).map(() => Array(9).fill(0));
+  for (let i = 0; i < 25; i++) {
+    const r = Math.floor(Math.random()*9), c = Math.floor(Math.random()*9);
+    const n = Math.floor(Math.random()*9)+1;
+    if (empty[r][c] === 0 && sudokuIsValid(empty, r, c, n)) empty[r][c] = n;
+  }
+  sudokuInitial = empty.map(r => [...r]);
+  sudokuBoard = empty.map(r => [...r]);
+  sudokuSelected = null;
+  document.getElementById('sudoku-win').classList.remove('show');
+  sudokuRenderGrid();
+}
+
+// ==================== SLIDING PUZZLE ====================
+const SLIDE_SIZE = 4;
+const SLIDE_GOAL = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0];
+let slideBoard = [], slideMoves = 0, slideSolving = false, slideWon = false;
+
+function slidingInit() {
+  slideWon = false;
+  slideMoves = 0;
+  document.getElementById('sliding-moves').textContent = '0';
+  document.getElementById('sliding-win').classList.remove('show');
+  slidingShuffle();
+}
+
+function slidingGetInversions(b) {
+  let inv = 0;
+  for (let i = 0; i < b.length; i++) {
+    if (b[i] === 0) continue;
+    for (let j = i+1; j < b.length; j++) {
+      if (b[j] !== 0 && b[i] > b[j]) inv++;
+    }
+  }
+  return inv;
+}
+
+function slidingIsSolvable(b) {
+  const inv = slidingGetInversions(b);
+  const emptyRow = SLIDE_SIZE - Math.floor(b.indexOf(0) / SLIDE_SIZE);
+  if (SLIDE_SIZE % 2 !== 0) return inv % 2 === 0;
+  return emptyRow % 2 === 0 ? inv % 2 !== 0 : inv % 2 === 0;
+}
+
+function slidingShuffle() {
+  if (slideSolving) return;
+  let b;
+  do {
+    b = [...SLIDE_GOAL];
+    for (let i = b.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [b[i],b[j]] = [b[j],b[i]];
+    }
+  } while (!slidingIsSolvable(b) || b.join(',') === SLIDE_GOAL.join(','));
+  slideBoard = b;
+  slideMoves = 0;
+  slideWon = false;
+  document.getElementById('sliding-moves').textContent = '0';
+  document.getElementById('sliding-win').classList.remove('show');
+  slidingRender();
+}
+
+function slidingCanMove(idx, emptyIdx) {
+  const r1 = Math.floor(idx/SLIDE_SIZE), c1 = idx%SLIDE_SIZE;
+  const r2 = Math.floor(emptyIdx/SLIDE_SIZE), c2 = emptyIdx%SLIDE_SIZE;
+  return Math.abs(r1-r2) + Math.abs(c1-c2) === 1;
+}
+
+function slidingClickTile(idx) {
+  if (slideSolving) return;
+  const emptyIdx = slideBoard.indexOf(0);
+  if (slidingCanMove(idx, emptyIdx)) {
+    [slideBoard[idx], slideBoard[emptyIdx]] = [slideBoard[emptyIdx], slideBoard[idx]];
+    slideMoves++;
+    document.getElementById('sliding-moves').textContent = slideMoves;
+    slidingRender();
+    if (slideBoard.join(',') === SLIDE_GOAL.join(',') && !slideWon) {
+      slideWon = true;
+      document.getElementById('sliding-win-moves').textContent = `in ${slideMoves} moves`;
+      document.getElementById('sliding-win').classList.add('show');
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    }
+  }
+}
+
+function slidingRender() {
+  const board = document.getElementById('sliding-board');
+  board.innerHTML = '';
+  slideBoard.forEach((tile, idx) => {
+    const div = document.createElement('div');
+    div.className = tile === 0 ? 'slide-tile empty' : 'slide-tile filled';
+    if (tile !== 0) div.textContent = tile;
+    div.onclick = () => slidingClickTile(idx);
+    board.appendChild(div);
+  });
+}
+
+function slidingManhattan(b) {
+  let d = 0;
+  for (let i = 0; i < b.length; i++) {
+    if (b[i] === 0) continue;
+    const tr = Math.floor((b[i]-1)/SLIDE_SIZE), tc = (b[i]-1)%SLIDE_SIZE;
+    const cr = Math.floor(i/SLIDE_SIZE), cc = i%SLIDE_SIZE;
+    d += Math.abs(tr-cr) + Math.abs(tc-cc);
+  }
+  return d;
+}
+
+async function slidingSolveAI() {
+  if (slideSolving || slideBoard.join(',') === SLIDE_GOAL.join(',')) return;
+  slideSolving = true;
+  document.getElementById('sliding-ai-btn').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg> AI is Solving...';
+  document.getElementById('sliding-ai-btn').disabled = true;
+  document.getElementById('sliding-shuffle-btn').disabled = true;
+
+  // IDA* algorithm — finds the guaranteed optimal solution
+  const goalStr = SLIDE_GOAL.join(',');
+
+  function getNeighbors(board) {
+    const emptyIdx = board.indexOf(0);
+    const moves = [];
+    const r = Math.floor(emptyIdx / SLIDE_SIZE), c = emptyIdx % SLIDE_SIZE;
+    if (r > 0) moves.push(emptyIdx - SLIDE_SIZE);
+    if (r < SLIDE_SIZE - 1) moves.push(emptyIdx + SLIDE_SIZE);
+    if (c > 0) moves.push(emptyIdx - 1);
+    if (c < SLIDE_SIZE - 1) moves.push(emptyIdx + 1);
+    return moves.map(tileIdx => {
+      const next = [...board];
+      [next[emptyIdx], next[tileIdx]] = [next[tileIdx], next[emptyIdx]];
+      return next;
+    });
+  }
+
+  // IDA* search — runs synchronously (fast enough for 15-puzzle with good heuristic)
+  function idaStar(start) {
+    let threshold = slidingManhattan(start);
+    const path = [start];
+
+    function search(g) {
+      const node = path[path.length - 1];
+      const f = g + slidingManhattan(node);
+      if (f > threshold) return f;
+      if (node.join(',') === goalStr) return -1; // found
+      let minT = Infinity;
+      for (const neighbor of getNeighbors(node)) {
+        // Avoid going back to the previous state
+        if (path.length >= 2 && neighbor.join(',') === path[path.length - 2].join(',')) continue;
+        path.push(neighbor);
+        const t = search(g + 1);
+        if (t === -1) return -1;
+        if (t < minT) minT = t;
+        path.pop();
+      }
+      return minT;
+    }
+
+    while (true) {
+      const t = search(0);
+      if (t === -1) return path; // solution found
+      if (t === Infinity) return null; // no solution
+      threshold = t;
+    }
+  }
+
+  // Run IDA* in a non-blocking way using setTimeout to avoid UI freeze
+  const solutionPath = await new Promise(resolve => {
+    setTimeout(() => resolve(idaStar([...slideBoard])), 10);
+  });
+
+  if (solutionPath) {
+    // Animate the solution path step by step
+    for (let i = 1; i < solutionPath.length; i++) {
+      slideBoard = solutionPath[i];
+      slideMoves++;
+      document.getElementById('sliding-moves').textContent = slideMoves;
+      slidingRender();
+      await sleep(120);
+    }
+  }
+
+  slideSolving = false;
+  document.getElementById('sliding-ai-btn').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg> Solve with AI';
+  document.getElementById('sliding-ai-btn').disabled = false;
+  document.getElementById('sliding-shuffle-btn').disabled = false;
+
+  if (slideBoard.join(',') === SLIDE_GOAL.join(',') && !slideWon) {
+    slideWon = true;
+    document.getElementById('sliding-win-moves').textContent = `in ${slideMoves} moves`;
+    document.getElementById('sliding-win').classList.add('show');
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('page-sliding').classList.contains('active')) return;
+  if (slideSolving) return;
+  const emptyIdx = slideBoard.indexOf(0);
+  let tileIdx = -1;
+  if (e.key === 'ArrowUp') tileIdx = emptyIdx + SLIDE_SIZE;
+  else if (e.key === 'ArrowDown') tileIdx = emptyIdx - SLIDE_SIZE;
+  else if (e.key === 'ArrowLeft') tileIdx = emptyIdx + 1;
+  else if (e.key === 'ArrowRight') tileIdx = emptyIdx - 1;
+  if (tileIdx >= 0 && tileIdx < 16) slidingClickTile(tileIdx);
+});
+
+// ==================== MAZE ====================
+const MAZE_COLS = 20, MAZE_ROWS = 20, MAZE_CELL = 20;
+let mazeGrid = [], mazePlayer = {x:0,y:0}, mazeSolving = false, mazeWon = false, mazePath = [];
+
+function mazeGenerate() {
+  if (mazeSolving) return;
+  mazeWon = false; mazeSolving = false; mazePath = [];
+  document.getElementById('maze-win').classList.remove('show');
+  document.getElementById('maze-ai-btn').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg> Solve with AI';
+  document.getElementById('maze-ai-btn').disabled = false;
+  document.getElementById('maze-new-btn').disabled = false;
+
+  // Init grid
+  mazeGrid = [];
+  for (let y = 0; y < MAZE_ROWS; y++) {
+    const row = [];
+    for (let x = 0; x < MAZE_COLS; x++) {
+      row.push({ x, y, walls: {top:true,right:true,bottom:true,left:true}, visited: false });
+    }
+    mazeGrid.push(row);
+  }
+
+  // Recursive backtracker
+  const stack = [];
+  let current = mazeGrid[0][0];
+  current.visited = true;
+  let unvisited = MAZE_ROWS * MAZE_COLS - 1;
+
+  while (unvisited > 0) {
+    const {x, y} = current;
+    const nbrs = [];
+    if (y > 0 && !mazeGrid[y-1][x].visited) nbrs.push({cell:mazeGrid[y-1][x],dir:'top'});
+    if (x < MAZE_COLS-1 && !mazeGrid[y][x+1].visited) nbrs.push({cell:mazeGrid[y][x+1],dir:'right'});
+    if (y < MAZE_ROWS-1 && !mazeGrid[y+1][x].visited) nbrs.push({cell:mazeGrid[y+1][x],dir:'bottom'});
+    if (x > 0 && !mazeGrid[y][x-1].visited) nbrs.push({cell:mazeGrid[y][x-1],dir:'left'});
+
+    if (nbrs.length > 0) {
+      const next = nbrs[Math.floor(Math.random()*nbrs.length)];
+      stack.push(current);
+      const dir = next.dir;
+      if (dir === 'top') { current.walls.top = false; next.cell.walls.bottom = false; }
+      else if (dir === 'right') { current.walls.right = false; next.cell.walls.left = false; }
+      else if (dir === 'bottom') { current.walls.bottom = false; next.cell.walls.top = false; }
+      else { current.walls.left = false; next.cell.walls.right = false; }
+      current = next.cell;
+      current.visited = true;
+      unvisited--;
+    } else if (stack.length > 0) {
+      current = stack.pop();
+    }
+  }
+
+  mazePlayer = {x:0, y:0};
+  mazeDraw();
+}
+
+function mazeDraw() {
+  const canvas = document.getElementById('maze-canvas');
+  if (canvas.width !== MAZE_COLS * MAZE_CELL) canvas.width = MAZE_COLS * MAZE_CELL;
+  if (canvas.height !== MAZE_ROWS * MAZE_CELL) canvas.height = MAZE_ROWS * MAZE_CELL;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw walls
+  ctx.strokeStyle = '#6366f1';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+
+  for (let y = 0; y < MAZE_ROWS; y++) {
+    for (let x = 0; x < MAZE_COLS; x++) {
+      const cell = mazeGrid[y][x];
+      const px = x * MAZE_CELL, py = y * MAZE_CELL;
+      if (cell.walls.top) { ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+MAZE_CELL,py); ctx.stroke(); }
+      if (cell.walls.right) { ctx.beginPath(); ctx.moveTo(px+MAZE_CELL,py); ctx.lineTo(px+MAZE_CELL,py+MAZE_CELL); ctx.stroke(); }
+      if (cell.walls.bottom) { ctx.beginPath(); ctx.moveTo(px+MAZE_CELL,py+MAZE_CELL); ctx.lineTo(px,py+MAZE_CELL); ctx.stroke(); }
+      if (cell.walls.left) { ctx.beginPath(); ctx.moveTo(px,py+MAZE_CELL); ctx.lineTo(px,py); ctx.stroke(); }
+    }
+  }
+
+  // Draw solved path
+  if (mazePath.length > 1) {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(129,140,248,0.6)';
+    ctx.lineWidth = 3;
+    ctx.moveTo(mazePath[0].x*MAZE_CELL+MAZE_CELL/2, mazePath[0].y*MAZE_CELL+MAZE_CELL/2);
+    for (let i = 1; i < mazePath.length; i++) {
+      ctx.lineTo(mazePath[i].x*MAZE_CELL+MAZE_CELL/2, mazePath[i].y*MAZE_CELL+MAZE_CELL/2);
+    }
+    ctx.stroke();
+  }
+
+  // Goal
+  ctx.fillStyle = '#10b981';
+  const gx = (MAZE_COLS-1)*MAZE_CELL+3, gy = (MAZE_ROWS-1)*MAZE_CELL+3;
+  ctx.fillRect(gx, gy, MAZE_CELL-6, MAZE_CELL-6);
+
+  // Player
+  ctx.fillStyle = '#f43f5e';
+  ctx.beginPath();
+  ctx.arc(mazePlayer.x*MAZE_CELL+MAZE_CELL/2, mazePlayer.y*MAZE_CELL+MAZE_CELL/2, MAZE_CELL/3, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function mazeMovePlayer(dir) {
+  if (mazeSolving || mazeGrid.length === 0) return;
+  const {x, y} = mazePlayer;
+  const cell = mazeGrid[y][x];
+  let nx = x, ny = y;
+  if (dir === 'up' && !cell.walls.top) ny--;
+  else if (dir === 'down' && !cell.walls.bottom) ny++;
+  else if (dir === 'left' && !cell.walls.left) nx--;
+  else if (dir === 'right' && !cell.walls.right) nx++;
+  if (nx !== x || ny !== y) {
+    mazePlayer = {x:nx, y:ny};
+    mazeDraw();
+    if (nx === MAZE_COLS-1 && ny === MAZE_ROWS-1 && !mazeWon) {
+      mazeWon = true;
+      document.getElementById('maze-win').classList.add('show');
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    }
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('page-maze').classList.contains('active')) return;
+  if (e.key === 'ArrowUp') { e.preventDefault(); mazeMovePlayer('up'); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); mazeMovePlayer('down'); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); mazeMovePlayer('left'); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); mazeMovePlayer('right'); }
+});
+
+async function mazeSolveAI() {
+  if (mazeSolving || mazeGrid.length === 0) return;
+  mazeSolving = true;
+  mazePlayer = {x:0,y:0};
+  mazePath = [];
+  document.getElementById('maze-ai-btn').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg> AI is Solving...';
+  document.getElementById('maze-ai-btn').disabled = true;
+  document.getElementById('maze-new-btn').disabled = true;
+
+  // BFS
+  const queue = [{x:0,y:0,path:[{x:0,y:0}]}];
+  const visited = new Set(['0,0']);
+  let finalPath = [];
+
+  while (queue.length > 0) {
+    const {x,y,path} = queue.shift();
+    if (x === MAZE_COLS-1 && y === MAZE_ROWS-1) { finalPath = path; break; }
+    const cell = mazeGrid[y][x];
+    const next = [];
+    if (!cell.walls.top) next.push({x,y:y-1});
+    if (!cell.walls.right) next.push({x:x+1,y});
+    if (!cell.walls.bottom) next.push({x,y:y+1});
+    if (!cell.walls.left) next.push({x:x-1,y});
+    for (const n of next) {
+      const k = `${n.x},${n.y}`;
+      if (!visited.has(k)) { visited.add(k); queue.push({...n, path:[...path,n]}); }
+    }
+  }
+
+  const animatedPath = [];
+  for (const step of finalPath) {
+    animatedPath.push(step);
+    mazePath = [...animatedPath];
+    mazePlayer = step;
+    mazeDraw();
+    await sleep(50);
+  }
+
+  mazeSolving = false;
+  document.getElementById('maze-ai-btn').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg> Solve with AI';
+  document.getElementById('maze-ai-btn').disabled = false;
+  document.getElementById('maze-new-btn').disabled = false;
+
+  if (!mazeWon) {
+    mazeWon = true;
+    document.getElementById('maze-win').classList.add('show');
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+  }
+}
+
+// ==================== COLOR SORT ====================
+const COLOR_LIST = ['#ef4444','#3b82f6','#10b981','#f59e0b'];
+const TUBE_CAP = 4;
+const NUM_TUBES = 6;
+let colorTubes = [], colorSelected = null, colorMoves = 0, colorSolving = false, colorWon = false;
+
+function colorGenerateLevel() {
+  colorSolving = false; colorWon = false; colorSelected = null; colorMoves = 0;
+  document.getElementById('color-moves').textContent = '0';
+  document.getElementById('color-win').classList.remove('show');
+  document.getElementById('color-ai-btn').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg> Solve with AI';
+  document.getElementById('color-ai-btn').disabled = false;
+  document.getElementById('color-new-btn').disabled = false;
+
+  let all = [];
+  for (const c of COLOR_LIST) for (let j = 0; j < TUBE_CAP; j++) all.push(c);
+  for (let i = all.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [all[i],all[j]] = [all[j],all[i]];
+  }
+
+  colorTubes = [];
+  for (let i = 0; i < COLOR_LIST.length; i++) {
+    colorTubes.push(all.slice(i*TUBE_CAP, (i+1)*TUBE_CAP));
+  }
+  for (let i = COLOR_LIST.length; i < NUM_TUBES; i++) colorTubes.push([]);
+  colorRender();
+}
+
+function colorCheckWin() {
+  let done = 0;
+  for (const t of colorTubes) {
+    if (t.length === 0) continue;
+    if (t.length !== TUBE_CAP) return false;
+    if (!t.every(c => c === t[0])) return false;
+    done++;
+  }
+  return done === COLOR_LIST.length;
+}
+
+function colorClickTube(idx) {
+  if (colorSolving) return;
+
+  if (colorSelected === null) {
+    if (colorTubes[idx].length > 0) {
+      colorSelected = idx;
+      colorRender();
+    }
+    return;
+  }
+
+  if (colorSelected === idx) {
+    colorSelected = null;
+    colorRender();
+    return;
+  }
+
+  const src = colorTubes[colorSelected];
+  const tgt = colorTubes[idx];
+  if (src.length === 0) { colorSelected = null; colorRender(); return; }
+
+  const top = src[src.length - 1];
+  if (tgt.length < TUBE_CAP && (tgt.length === 0 || tgt[tgt.length-1] === top)) {
+    colorTubes[colorSelected] = [...src];
+    colorTubes[idx] = [...tgt];
+    colorTubes[colorSelected].pop();
+    colorTubes[idx].push(top);
+    colorMoves++;
+    document.getElementById('color-moves').textContent = colorMoves;
+  }
+  colorSelected = null;
+  colorRender();
+
+  if (colorCheckWin() && !colorWon) {
+    colorWon = true;
+    document.getElementById('color-win-moves').textContent = `in ${colorMoves} moves`;
+    document.getElementById('color-win').classList.add('show');
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+  }
+}
+
+function colorRender() {
+  const board = document.getElementById('color-board');
+  board.innerHTML = '';
+  colorTubes.forEach((tube, idx) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'tube-wrapper';
+    const t = document.createElement('div');
+    t.className = 'tube' + (colorSelected === idx ? ' selected' : '');
+    t.onclick = () => colorClickTube(idx);
+    tube.forEach(color => {
+      const ball = document.createElement('div');
+      ball.className = 'color-ball';
+      ball.style.backgroundColor = color;
+      t.appendChild(ball);
+    });
+    wrapper.appendChild(t);
+    board.appendChild(wrapper);
+  });
+}
+
+async function colorSolveAI() {
+  if (colorSolving || colorCheckWin()) return;
+  colorSolving = true;
+  colorSelected = null;
+  document.getElementById('color-ai-btn').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg> AI is Solving...';
+  document.getElementById('color-ai-btn').disabled = true;
+  document.getElementById('color-new-btn').disabled = true;
+
+  // BFS over tube states to find an exact solution path
+  function tubeKey(tubes) {
+    return tubes.map(t => t.join('|')).join(';');
+  }
+
+  function getValidMoves(tubes) {
+    const moves = [];
+    for (let from = 0; from < tubes.length; from++) {
+      if (tubes[from].length === 0) continue;
+      // Skip moving from a tube that is already fully sorted (all same color, full)
+      const srcTop = tubes[from][tubes[from].length - 1];
+      const srcAllSame = tubes[from].every(c => c === srcTop);
+      if (srcAllSame && tubes[from].length === TUBE_CAP) continue;
+
+      for (let to = 0; to < tubes.length; to++) {
+        if (from === to) continue;
+        if (tubes[to].length >= TUBE_CAP) continue;
+        // Can pour if target is empty OR top color matches
+        if (tubes[to].length === 0 || tubes[to][tubes[to].length - 1] === srcTop) {
+          // Skip useless move: pouring into empty when source is already all same color
+          if (tubes[to].length === 0 && srcAllSame) continue;
+          moves.push({ from, to });
+        }
+      }
+    }
+    return moves;
+  }
+
+  function applyMove(tubes, move) {
+    const next = tubes.map(t => [...t]);
+    const color = next[move.from].pop();
+    next[move.to].push(color);
+    return next;
+  }
+
+  function checkSolved(tubes) {
+    let done = 0;
+    for (const t of tubes) {
+      if (t.length === 0) continue;
+      if (t.length !== TUBE_CAP) return false;
+      if (!t.every(c => c === t[0])) return false;
+      done++;
+    }
+    return done === COLOR_LIST.length;
+  }
+
+  // Run BFS in a non-blocking way
+  const solutionMoves = await new Promise(resolve => {
+    setTimeout(() => {
+      const startTubes = colorTubes.map(t => [...t]);
+      const startKey = tubeKey(startTubes);
+      const visited = new Map(); // key -> parentKey
+      visited.set(startKey, null);
+
+      // BFS queue holds: { tubes, moves[] }
+      const queue = [{ tubes: startTubes, moves: [] }];
+      let found = null;
+
+      while (queue.length > 0 && !found) {
+        const { tubes, moves } = queue.shift();
+        for (const move of getValidMoves(tubes)) {
+          const next = applyMove(tubes, move);
+          const key = tubeKey(next);
+          if (!visited.has(key)) {
+            visited.set(key, true);
+            const newMoves = [...moves, { move, tubes: next }];
+            if (checkSolved(next)) { found = newMoves; break; }
+            queue.push({ tubes: next, moves: newMoves });
+          }
+        }
+      }
+      resolve(found);
+    }, 10);
+  });
+
+  if (solutionMoves) {
+    // Animate each move
+    for (const step of solutionMoves) {
+      colorTubes = step.tubes.map(t => [...t]);
+      colorMoves++;
+      document.getElementById('color-moves').textContent = colorMoves;
+      colorRender();
+      await sleep(300);
+    }
+  }
+
+  colorSolving = false;
+  document.getElementById('color-ai-btn').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg> Solve with AI';
+  document.getElementById('color-ai-btn').disabled = false;
+  document.getElementById('color-new-btn').disabled = false;
+
+  if (colorCheckWin() && !colorWon) {
+    colorWon = true;
+    document.getElementById('color-win-moves').textContent = `in ${colorMoves} moves`;
+    document.getElementById('color-win').classList.add('show');
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+  }
+}
+
+// Init landing
+window.addEventListener('load', () => {});
+</script>
+</body>
+</html>
